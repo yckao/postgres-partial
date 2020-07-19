@@ -60,7 +60,10 @@ SELECT $1 as foo
 You can mix Partial and Skip to provide dynamic queries.
 ```js
 function (limit) {
-  sql`SELECT id FROM example ${limit ? sql.partial`LIMIT ${limit}` : sql.skip}`
+  await sql`SELECT id FROM example ${limit ? sql.partial`LIMIT ${limit}` : sql.skip}`
+  // or
+  const limitQuery = limit ? sql.partial`LIMIT ${limit}` : sql.skip}`
+  await sql`SELECT id FROM example ${limitQuery}`
 }
 // This will translate into below when limit is an truthy value.
 SELECT id FROM example LIMIT $1
