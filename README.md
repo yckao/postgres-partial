@@ -1,4 +1,10 @@
 ## postgres-partial
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/yckao/postgres-partial/Test)](https://github.com/yckao/postgres-partial/actions)
+[![GitHub](https://img.shields.io/github/license/yckao/postgres-partial)](https://github.com/yckao/postgres-partial/blob/master/LICENSE)
+[![codecov](https://codecov.io/gh/yckao/postgres-partial/branch/master/graph/badge.svg)](https://codecov.io/gh/yckao/postgres-partial)
+[![npm](https://img.shields.io/npm/dw/postgres-partial)](https://www.npmjs.com/package/postgres-partial)
+[![npm](https://img.shields.io/npm/v/postgres-partial)](https://www.npmjs.com/package/postgres-partial)
+
 **This is in experimental state and may be deprecated when partial query has official support.**
 
 This package is a simple wrapper providing two feature.

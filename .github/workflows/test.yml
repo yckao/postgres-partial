@@ -33,5 +33,5 @@ jobs:
       - run: yarn build
       - run: yarn test
         env:
-          POSTGRES_URL: postgres://postgres:postgres@localhost/postgres_partial
+          POSTGRES_URL: postgres://postgres:postgres@postgres/postgres_partial
       - uses: codecov/codecov-action@v1
