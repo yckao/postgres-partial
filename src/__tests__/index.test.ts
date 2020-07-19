@@ -44,4 +44,10 @@ describe('dynamic integration tests', () => {
     expect(rows).toHaveLength(1)
     expect(rows[0]).toEqual({ foo: 'bar' })
   })
+
+  test('with json', async () => {
+    const test = sql.partial`${sql.json({ foo: 'bar' })}`
+    const [row] = await sql`SELECT ${test} as json`
+    expect(row.json).toEqual({ foo: 'bar' })
+  })
 })
