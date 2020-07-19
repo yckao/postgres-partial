@@ -1,5 +1,5 @@
 import { PartialSQL, Skip, SerializableParameterDynamic } from './types'
-import { Sql, SerializableParameter, Row, PendingQuery } from 'postgres'
+import { Sql, SerializableParameter, Row, PendingQuery, Helper, HelperSerializable } from 'postgres'
 
 function partial(xs: TemplateStringsArray, ...args: SerializableParameterDynamic[]) {
   return new PartialSQL(xs, args)
@@ -68,8 +68,16 @@ export type SqlWithDynamic<T extends { [name: string]: unknown }> = Sql<T> & {
   <T extends Row | Row[] = Row>(template: TemplateStringsArray, ...args: SerializableParameterDynamic[]): PendingQuery<T extends Row[] ? T : T[]>;
 }
 
+function isTemplateStringArray(strs: TemplateStringsArray | string[] | string): strs is TemplateStringsArray {
+  return Array.isArray((strs as TemplateStringsArray).raw) && Array.isArray(strs)
+}
+
 export function wrap(sql: Sql<never>): SqlWithDynamic<never> {
-  function wrapper<T>(strs: TemplateStringsArray, ...params: SerializableParameterDynamic[]) {
+  function wrapper<T>(strs: TemplateStringsArray | string, ...params: SerializableParameterDynamic[] | string[]): PendingQuery<T extends Row[] ? T : T[]> | Helper<string> {
+    if (!isTemplateStringArray(strs)) {
+      return sql(strs, ...(params as string[]))
+    }
+
     const { strs: _strs, params: _params } = parse(strs, ...params)
     const tsa = Object.assign(_strs, { raw: _strs.slice() }) as TemplateStringsArray
 
@@ -78,5 +86,5 @@ export function wrap(sql: Sql<never>): SqlWithDynamic<never> {
 
   const skip = new Skip()
 
-  return Object.assign(wrapper, sql, { partial, skip })
+  return Object.assign(wrapper, sql, { partial, skip }) as SqlWithDynamic<never>
 }

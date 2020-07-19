@@ -50,4 +50,9 @@ describe('dynamic integration tests', () => {
     const [row] = await sql`SELECT ${test} as json`
     expect(row.json).toEqual({ foo: 'bar' })
   })
+
+  test('sql helper', async () => {
+    const helper = sql('table');
+    expect(helper).toEqual({ first: 'table', rest: [] })
+  })
 })
