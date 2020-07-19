@@ -7,6 +7,8 @@
 
 **This is in experimental state and may be deprecated when partial query has official support.**
 
+**Only tested on postgres@beta**
+
 This package is a simple wrapper providing two feature.
 
 One is partial, that can dynamic build an query and also benefit from postgres's Tagged template system.
