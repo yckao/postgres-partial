@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "lib",
+    "declaration": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "experimentalDecorators": false
+  },
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "**/__tests__/**"
+  ]
+}
