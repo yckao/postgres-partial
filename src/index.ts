@@ -75,7 +75,7 @@ function isTemplateStringArray(strs: TemplateStringsArray | string[] | string): 
 export function wrap(sql: Sql<never>): SqlWithDynamic<never> {
   function wrapper<T>(strs: TemplateStringsArray | string, ...params: SerializableParameterDynamic[] | string[]): PendingQuery<T extends Row[] ? T : T[]> | Helper<string> {
     if (!isTemplateStringArray(strs)) {
-      return sql(strs, ...(params as string[]))
+      return sql(strs, ...Array.from(arguments).slice(1))
     }
 
     const { strs: _strs, params: _params } = parse(strs, ...params)
