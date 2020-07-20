@@ -3,6 +3,7 @@
 const { t, not, ot } = require('./test.js') // eslint-disable-line
 const cp = require('child_process')
 const path = require('path')
+const core = require('core-js')
 
 /** @type {import('../types')} */
 const postgres = require('postgres')
