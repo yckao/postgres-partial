@@ -1,6 +1,6 @@
 {
   "name": "postgres-partial",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "author": "yckao <yckaokarl@gmail.com>",
   "description": "postgres wrapper to apply partial queries and dynamic queries",
   "bugs": {
