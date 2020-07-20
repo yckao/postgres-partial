@@ -247,15 +247,6 @@ t('Throw syntax error', async () =>
   ['42601', (await sql`wat 1`.catch(x => x)).code]
 )
 
-t('Connect using uri', async () =>
-  [true, await new Promise((resolve, reject) => {
-    const sql = postgres('postgres://' + login.user + ':' + (login.pass || '') + '@localhost:5432/' + options.db, {
-      idle_timeout: options.idle_timeout
-    })
-    sql`select 1`.then(() => resolve(true), reject)
-  })]
-)
-
 t('Fail with proper error on no host', async () =>
   ['ECONNREFUSED', (await new Promise((resolve, reject) => {
     const sql = postgres('postgres://localhost:33333/' + options.db, {
