@@ -19,7 +19,7 @@
   "scripts": {
     "lint": "eslint",
     "build": "tsc",
-    "test": "jest"
+    "test": "jest && node tests/index.js"
   },
   "keywords": [
     "postgres.js",
