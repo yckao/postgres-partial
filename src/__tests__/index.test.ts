@@ -60,4 +60,13 @@ describe('dynamic integration tests', () => {
     const helper = sql({ foo: 'bar', bar: 'foo' }, 'foo', 'bar');
     expect(helper).toEqual({ first: { foo: 'bar', bar: 'foo' }, rest: ['foo', 'bar'] })
   })
+
+  test('transaction', async () => {
+    await sql.begin(async (sql) => {
+      const rows = await sql`SELECT 'bar' as foo ${sql.skip}`
+
+      expect(rows).toHaveLength(1)
+      expect(rows[0]).toEqual({ foo: 'bar' })
+    })
+  })
 })

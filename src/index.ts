@@ -1,5 +1,13 @@
 import { PartialSQL, Skip, SerializableParameterDynamic } from './types'
-import { Sql, SerializableParameter, Row, PendingQuery, Helper, HelperSerializable } from 'postgres'
+import { Sql, SerializableParameter, Row, PendingQuery, Helper, TransactionSql } from 'postgres'
+
+interface JSToPostgresTypeMap {
+  [name: string]: unknown;
+}
+
+type UnwrapPromiseArray<T> = T extends any[] ? {
+  [k in keyof T]: T[k] extends Promise<infer R> ? R : T[k]
+} : T;
 
 function partial(xs: TemplateStringsArray, ...args: SerializableParameterDynamic[]) {
   return new PartialSQL(xs, args)
@@ -61,7 +69,17 @@ function parse(strs: string[] | TemplateStringsArray, ...params: SerializablePar
   }
 }
 
-export type SqlWithDynamic<T extends { [name: string]: unknown }> = Sql<T> & {
+export type TransactionSqlWithDynamic<TTypes extends JSToPostgresTypeMap> = TransactionSql<TTypes> & {
+  skip: Skip
+  partial: typeof partial
+} & {
+  <T extends Row | Row[] = Row>(template: TemplateStringsArray, ...args: SerializableParameterDynamic[]): PendingQuery<T extends Row[] ? T : T[]>;
+}
+
+export type SqlWithDynamic<TTypes extends JSToPostgresTypeMap> = {
+  begin<T>(cb: (sql: TransactionSqlWithDynamic<TTypes>) => T | Promise<T>): Promise<UnwrapPromiseArray<T>>;
+  begin<T>(options: string, cb: (sql: TransactionSqlWithDynamic<TTypes>) => T | Promise<T>): Promise<UnwrapPromiseArray<T>>;
+} & Sql<TTypes> & {
   skip: Skip
   partial: typeof partial
 } & {
@@ -72,9 +90,9 @@ function isTemplateStringArray(strs: TemplateStringsArray | string[] | string): 
   return Array.isArray((strs as TemplateStringsArray).raw) && Array.isArray(strs)
 }
 
-export function wrap(sql: Sql<never>): SqlWithDynamic<never> {
+export function wrap<TTypes extends JSToPostgresTypeMap>(sql: Sql<TTypes>): SqlWithDynamic<TTypes> {
   // TODO: Use Actual Type For Helper
-  function wrapper<T>(strs: TemplateStringsArray | string, ...params: SerializableParameterDynamic[] | string[]): PendingQuery<T extends Row[] ? T : T[]> | Helper<string> {
+  function query<T>(strs: TemplateStringsArray | string, ...params: SerializableParameterDynamic[] | string[]): PendingQuery<T extends Row[] ? T : T[]> | Helper<string> {
     if (!isTemplateStringArray(strs)) {
       return sql(strs, ...Array.from(arguments).slice(1))
     }
@@ -85,7 +103,22 @@ export function wrap(sql: Sql<never>): SqlWithDynamic<never> {
     return sql<T>(tsa, ..._params as SerializableParameter[])
   }
 
+  function begin<T>(cb: (sql: TransactionSqlWithDynamic<TTypes>) => T | Promise<T>): Promise<UnwrapPromiseArray<T>>;
+  function begin<T>(options: string, cb: (sql: TransactionSqlWithDynamic<TTypes>) => T | Promise<T>): Promise<UnwrapPromiseArray<T>>;
+  function begin<T>(options: string | ((sql: TransactionSqlWithDynamic<TTypes>) => T | Promise<T>), cb?: (sql: TransactionSqlWithDynamic<TTypes>) => T | Promise<T>): Promise<UnwrapPromiseArray<T>> {
+    if (!cb) {
+      cb = options as (sql: TransactionSqlWithDynamic<TTypes>) => T | Promise<T>
+      options = ''
+    }
+
+    function wrapper(sql: TransactionSql<TTypes>): T | Promise<T> {
+      return cb!(Object.assign(query, sql, { partial, skip }) as TransactionSqlWithDynamic<TTypes>)
+    }
+
+    return sql.begin(options as string, wrapper)
+  }
+
   const skip = new Skip()
 
-  return Object.assign(wrapper, sql, { partial, skip }) as SqlWithDynamic<never>
+  return Object.assign(query, sql, { partial, skip, begin }) as SqlWithDynamic<TTypes>
 }
