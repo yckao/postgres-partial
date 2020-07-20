@@ -69,4 +69,31 @@ describe('dynamic integration tests', () => {
       expect(rows[0]).toEqual({ foo: 'bar' })
     })
   })
+
+  test('transaction with options ', async () => {
+    await sql.begin('read only', async (sql) => {
+      const rows = await sql`SELECT 'bar' as foo ${sql.skip}`
+
+      expect(rows).toHaveLength(1)
+      expect(rows[0]).toEqual({ foo: 'bar' })
+    })
+  })
+
+  test('savepoint', async () => {
+    await sql.begin(async (sql) => {
+      const rows = await sql.savepoint(sql => sql`SELECT 'bar' as foo ${sql.skip}`)
+
+      expect(rows).toHaveLength(1)
+      expect(rows[0]).toEqual({ foo: 'bar' })
+    })
+  })
+
+  test('savepoint with name', async () => {
+    await sql.begin(async (sql) => {
+      const rows = await sql.savepoint('select', sql => sql`SELECT 'bar' as foo ${sql.skip}`)
+
+      expect(rows).toHaveLength(1)
+      expect(rows[0]).toEqual({ foo: 'bar' })
+    })
+  })
 })

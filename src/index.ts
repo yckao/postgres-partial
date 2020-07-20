@@ -1,5 +1,6 @@
 import { PartialSQL, Skip, SerializableParameterDynamic } from './types'
 import { Sql, SerializableParameter, Row, PendingQuery, Helper, TransactionSql } from 'postgres'
+import { isString } from 'util';
 
 interface JSToPostgresTypeMap {
   [name: string]: unknown;
@@ -69,12 +70,16 @@ function parse(strs: string[] | TemplateStringsArray, ...params: SerializablePar
   }
 }
 
-export type TransactionSqlWithDynamic<TTypes extends JSToPostgresTypeMap> = TransactionSql<TTypes> & {
-  skip: Skip
-  partial: typeof partial
-} & {
-  <T extends Row | Row[] = Row>(template: TemplateStringsArray, ...args: SerializableParameterDynamic[]): PendingQuery<T extends Row[] ? T : T[]>;
-}
+export type TransactionSqlWithDynamic<TTypes extends JSToPostgresTypeMap> = {
+  savepoint<T>(cb: (sql: TransactionSqlWithDynamic<TTypes>) => T | Promise<T>): Promise<UnwrapPromiseArray<T>>;
+  savepoint<T>(name: string, cb: (sql: TransactionSqlWithDynamic<TTypes>) => T | Promise<T>): Promise<UnwrapPromiseArray<T>>;
+} &
+  TransactionSql<TTypes> & {
+    skip: Skip
+    partial: typeof partial
+  } & {
+    <T extends Row | Row[] = Row>(template: TemplateStringsArray, ...args: SerializableParameterDynamic[]): PendingQuery<T extends Row[] ? T : T[]>;
+  }
 
 export type SqlWithDynamic<TTypes extends JSToPostgresTypeMap> = {
   begin<T>(cb: (sql: TransactionSqlWithDynamic<TTypes>) => T | Promise<T>): Promise<UnwrapPromiseArray<T>>;
@@ -103,6 +108,21 @@ export function wrap<TTypes extends JSToPostgresTypeMap>(sql: Sql<TTypes>): SqlW
     return sql<T>(tsa, ..._params as SerializableParameter[])
   }
 
+  function wrapper<T>(cb: ((sql: TransactionSqlWithDynamic<TTypes>) => T | Promise<T>)) {
+    return function (sql: TransactionSql<TTypes>): T | Promise<T> {
+      function savepoint(cb: (sql: TransactionSqlWithDynamic<TTypes>) => T | Promise<T>): Promise<UnwrapPromiseArray<T>>;
+      function savepoint(name: string, cb: (sql: TransactionSqlWithDynamic<TTypes>) => T | Promise<T>): Promise<UnwrapPromiseArray<T>>;
+      function savepoint(name: string | ((sql: TransactionSqlWithDynamic<TTypes>) => T | Promise<T>), cb?: (sql: TransactionSqlWithDynamic<TTypes>) => T | Promise<T>): Promise<UnwrapPromiseArray<T>> {
+        if (isString(name)) {
+          return sql.savepoint<T>(name, wrapper(cb!))
+        } else {
+          return sql.savepoint<T>(wrapper(name))
+        }
+      }
+      return cb!(Object.assign(query, sql, { partial, skip, savepoint }) as TransactionSqlWithDynamic<TTypes>)
+    }
+  }
+
   function begin<T>(cb: (sql: TransactionSqlWithDynamic<TTypes>) => T | Promise<T>): Promise<UnwrapPromiseArray<T>>;
   function begin<T>(options: string, cb: (sql: TransactionSqlWithDynamic<TTypes>) => T | Promise<T>): Promise<UnwrapPromiseArray<T>>;
   function begin<T>(options: string | ((sql: TransactionSqlWithDynamic<TTypes>) => T | Promise<T>), cb?: (sql: TransactionSqlWithDynamic<TTypes>) => T | Promise<T>): Promise<UnwrapPromiseArray<T>> {
@@ -111,11 +131,7 @@ export function wrap<TTypes extends JSToPostgresTypeMap>(sql: Sql<TTypes>): SqlW
       options = ''
     }
 
-    function wrapper(sql: TransactionSql<TTypes>): T | Promise<T> {
-      return cb!(Object.assign(query, sql, { partial, skip }) as TransactionSqlWithDynamic<TTypes>)
-    }
-
-    return sql.begin(options as string, wrapper)
+    return sql.begin(options as string, wrapper(cb))
   }
 
   const skip = new Skip()
