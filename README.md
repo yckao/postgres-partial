@@ -5,7 +5,7 @@
 [![npm](https://img.shields.io/npm/dw/postgres-partial)](https://www.npmjs.com/package/postgres-partial)
 [![npm](https://img.shields.io/npm/v/postgres-partial)](https://www.npmjs.com/package/postgres-partial)
 
-**This is in experimental state and may be deprecated when partial query has official support.**
+**This is in experimental state and may be deprecate when partial query has official support.**
 
 **Only tested on postgres@beta**
 
